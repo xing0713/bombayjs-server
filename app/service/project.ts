@@ -16,11 +16,12 @@ export default class ProjectService extends Service {
     const type = query.type;
     // 参数校验
     ctx.validate(this.ProjectValidate);
-    if(ctx.paramErrors) {
+    if (ctx.paramErrors) {
       // get error infos from `ctx.paramErrors`;
       return this.app.retError(ctx.paramErrors[0].desc);
     }
     if (!query.app_id && type === 'wx') return this.app.retError('新增项目信息操作：appId不能为空');
+    if (!query.url && type === 'web') return this.app.retError('新增项目信息操作：url不能为空');
 
     // 检验项目是否存在
     const search = await ctx.model.Project.findOne({ project_name: query.project_name, type: query.type }).exec();
@@ -32,6 +33,7 @@ export default class ProjectService extends Service {
     const project = ctx.model.Project();
     project.project_name = query.project_name;
     project.token = token;
+    project.url = query.url;
     project.type = query.type;
     project.app_id = query.app_id;
     project.user_id = [ ctx.currentUserId || '' ];
@@ -79,7 +81,7 @@ export default class ProjectService extends Service {
     const result = await this.ctx.model.Project.update(
         { app_id: appId },
         update,
-        { multi: true }
+        { multi: true },
     ).exec();
     // 更新redis缓存
     this._updateProjectCache(appId);
@@ -216,5 +218,13 @@ export default class ProjectService extends Service {
       if (result === '{}') result = await this.ctx.model.Project.findOne({ token }).exec() || '{}';
       if (result === '{}') return JSON.parse(result);
       return result;
+  }
+  async getProjectByToken(token) {
+    const result: string = await this.app.redis.get(token) || '{}';
+    if (result === '{}') {
+      return await this.ctx.model.Project.findOne({ token }).exec();
+    } else {
+      return JSON.parse(result);
+    }
   }
 }

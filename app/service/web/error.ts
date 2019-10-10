@@ -1,5 +1,6 @@
 import { Service } from 'egg';
-const _ =require('lodash');
+// tslint:disable-next-line:no-var-requires
+const _ = require('lodash');
 
 export default class ErrorService extends Service {
   listValidator: any;
@@ -13,6 +14,7 @@ export default class ErrorService extends Service {
       end: { type: 'date', required: true, trim: true, desc: '请选择结束时间' },
     };
   }
+
   // 获得列表信息
   async list(ctx) {
     const { key, token, begin, end } = ctx.request.body;
